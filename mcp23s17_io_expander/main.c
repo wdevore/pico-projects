@@ -102,14 +102,136 @@ int blinky_bank0();
 int blinky_bank1();
 int read_iocon();
 int read_iocon_bank0();
+int interrupt_test();
 
 // -----------------------------------------------------------------
 // Entry point
 // -----------------------------------------------------------------
 int main()
 {
-    blinky_bank0();
+    interrupt_test();
+    // blinky_bank0();
     // read_iocon_bank0();
+}
+
+void pulse_led() {
+    int cnt = 0;
+    while (cnt < 5)
+    {
+        write_register(MCP23S17_BK0_GPIO_A, 0b00000000);
+        sleep_ms(50);
+        write_register(MCP23S17_BK0_GPIO_A, 0b00000010);
+        sleep_ms(20);
+        cnt++;
+    }
+    write_register(MCP23S17_BK0_GPIO_A, 0b00000000);
+}
+
+// -------------------------------------------------------
+// This test sets up an interrupt callback for pin GP15
+// 
+// -------------------------------------------------------
+int interrupt_test() {
+    bi_decl(bi_program_description("MCP23S17 IO expander test."));
+    bi_decl(bi_1pin_with_name(LED_PIN, "On-board LED"));
+    
+#if !defined(spi_default) || !defined(PICO_DEFAULT_SPI_SCK_PIN) || !defined(PICO_DEFAULT_SPI_TX_PIN) || !defined(PICO_DEFAULT_SPI_CSN_PIN)
+#warning spi/mcp23s17 example requires a board with SPI pins
+    puts("Default SPI pins were not defined");
+#else
+    // -----------------------------------------------
+    // Configure Pico first
+    // -----------------------------------------------
+    stdio_init_all();
+
+
+    // This example will use SPI0 at 1MHz.
+    spi_init(spi_default, 1000 * 1000);
+
+    gpio_set_function(PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_DEFAULT_SPI_TX_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(PICO_DEFAULT_SPI_RX_PIN, GPIO_FUNC_SPI);
+
+    // Make the SPI pins available to picotool
+    bi_decl(bi_3pins_with_func(PICO_DEFAULT_SPI_RX_PIN, PICO_DEFAULT_SPI_TX_PIN, PICO_DEFAULT_SPI_SCK_PIN, GPIO_FUNC_SPI));
+
+    // Chip select is active-low, so we'll initialise it to a driven-high state
+    gpio_init(PICO_DEFAULT_SPI_CSN_PIN);
+    gpio_set_dir(PICO_DEFAULT_SPI_CSN_PIN, GPIO_OUT);
+    gpio_put(PICO_DEFAULT_SPI_CSN_PIN, 1);
+
+    // SPI mode 0 means that Clock Idle is low
+    gpio_put(PICO_DEFAULT_SPI_SCK_PIN, 0);
+
+    // Make the CS pin available to picotool
+    bi_decl(bi_1pin_with_name(PICO_DEFAULT_SPI_CSN_PIN, "SPI CS"));
+
+    printf("Pausing for trigger\n");
+    sleep_ms(2 * 1000);
+    printf("Setting registers\n");
+
+    uint8_t byteRead;
+    int bytesWritten;
+
+    // -----------------------------------------------
+    // Now configure MCP
+    // See readme for explanation of values.
+    // -----------------------------------------------
+    uint8_t mask = MCP23S17_IOCR_SEQOP; // 0x20
+    bytesWritten = write_register(MCP23S17_BK0_IOCON_A, mask);
+    printf("Wrote to IOCON (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_IOCON_A);
+    printf("Read IOCON = (%02x)\n", byteRead);
+
+    // Configures GPIO_A bit 0 as Input
+    bytesWritten = write_register(MCP23S17_BK0_IODIR_A, 0b00000001);
+    printf("Wrote to IODIR (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_IODIR_A);
+    printf("Read IODIR = (%02x)\n", byteRead);
+
+    // Configures for comparison against the associated bit in the DEFVAL register.
+    bytesWritten = write_register(MCP23S17_BK0_INTCON_A, 0b00000001);
+    printf("Wrote to INTCON (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_INTCON_A);
+    printf("Read INTCON = (%02x)\n", byteRead);
+
+    // Loads DEFVAL with 0x01, hence 1 is compared to the button which is
+    // active low
+    bytesWritten = write_register(MCP23S17_BK0_DEFVAL_A, 0b00000001);
+    printf("Wrote to DEFVAL (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_DEFVAL_A);
+    printf("Read DEFVAL = (%02x)\n", byteRead);
+
+    // Add a weak pull-up to bit 0
+    bytesWritten = write_register(MCP23S17_BK0_GPPU_A, 0b00000001);
+    printf("Wrote to GPPU (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_GPPU_A);
+    printf("Read GPPU = (%02x)\n", byteRead);
+
+    // Enable IoC on Port A bit 0
+    bytesWritten = write_register(MCP23S17_BK0_GPINTEN_A, 0b00000001);
+    printf("Wrote to GPINTEN (%d) bytes\n", bytesWritten);
+    byteRead = read_register(MCP23S17_BK0_GPINTEN_A);
+    printf("Read GPINTEN = (%02x)\n", byteRead);
+
+    int cnt = 0;
+    while (true) 
+    {
+        printf("(%d) ------------------\n", cnt);
+        byteRead = read_register(MCP23S17_BK0_INTF_A);
+        printf("Read INTF = (%02x)\n", byteRead);
+        if (byteRead == 1) {
+            pulse_led();
+            byteRead = read_register(MCP23S17_BK0_INTCAP_A);
+            printf("Read INTCAP = (%02x)\n", byteRead);
+            // sleep_ms(20);
+        }
+        sleep_ms(100);
+        cnt++;
+    }
+#endif
+
+    return 0;
 }
 
 // -------------------------------------------------------
@@ -311,7 +433,7 @@ int read_iocon_bank0() {
 }
 
 // -------------------------------------------------------
-// Output only: Blinky bank 0
+// Blinky bank 0
 // -------------------------------------------------------
 int blinky_bank0() {
     bi_decl(bi_program_description("MCP23S17 IO expander test."));
@@ -324,6 +446,10 @@ int blinky_bank0() {
 #warning spi/mcp23s17 example requires a board with SPI pins
     puts("Default SPI pins were not defined");
 #else
+    // -----------------------------------------------
+    // Configure Pico first
+    // -----------------------------------------------
+
     // This example will use SPI0 at 1MHz.
     spi_init(spi_default, 1000 * 1000);
 
@@ -356,8 +482,6 @@ int blinky_bank0() {
     // Now configure MCP
     // See readme for explanation of values.
     // -----------------------------------------------
-    // We need to switch the BANK bit first so the rest of
-    // Transactions use the correct Addresses
     uint8_t mask = MCP23S17_IOCR_SEQOP; // 0x20
     bytesWritten = write_register(MCP23S17_BK0_IOCON_A, mask);
     printf("Wrote to IOCON (%d) bytes\n", bytesWritten);
@@ -406,6 +530,10 @@ int blinky_bank0() {
     return 0;
 }
 
+// -------------------------------------------------------
+// Blinky bank 1
+// Not fully tested.
+// -------------------------------------------------------
 int blinky_bank1() {
     bi_decl(bi_program_description("MCP23S17 IO expander test."));
     bi_decl(bi_1pin_with_name(LED_PIN, "On-board LED"));

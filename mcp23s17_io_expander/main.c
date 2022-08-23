@@ -98,11 +98,22 @@ static uint8_t read_register2(uint8_t regAddr) {
 
 #endif
 
+// GPIO number *not* physical pin on PCB
+#define MY_PICO_IRQ_PIN 15
+
 int blinky_bank0();
 int blinky_bank1();
 int read_iocon();
 int read_iocon_bank0();
 int interrupt_test();
+void pulse_led();
+
+bool interrupt_occurred = false;
+
+void gpio_callback(uint gpio, uint32_t events) {
+    interrupt_occurred = true;
+    printf("Interrupt on gpio (%d) \n", gpio);
+}
 
 // -----------------------------------------------------------------
 // Entry point
@@ -214,17 +225,28 @@ int interrupt_test() {
     byteRead = read_register(MCP23S17_BK0_GPINTEN_A);
     printf("Read GPINTEN = (%02x)\n", byteRead);
 
+    // We want to detect a falling edge pulse.
+    gpio_set_irq_enabled_with_callback(MY_PICO_IRQ_PIN, GPIO_IRQ_EDGE_FALL, true, &gpio_callback);
+
     int cnt = 0;
     while (true) 
     {
         printf("(%d) ------------------\n", cnt);
         byteRead = read_register(MCP23S17_BK0_INTF_A);
         printf("Read INTF = (%02x)\n", byteRead);
-        if (byteRead == 1) {
+        
+        // if (byteRead == 1) {
+        //     pulse_led();
+        //     byteRead = read_register(MCP23S17_BK0_INTCAP_A);
+        //     printf("Read INTCAP = (%02x)\n", byteRead);
+        //     // sleep_ms(20);
+        // }
+
+        if (interrupt_occurred) {
+            interrupt_occurred = false;
             pulse_led();
-            byteRead = read_register(MCP23S17_BK0_INTCAP_A);
-            printf("Read INTCAP = (%02x)\n", byteRead);
-            // sleep_ms(20);
+            // Clear MCP's interrupt flag by reading INTCAP
+            read_register(MCP23S17_BK0_INTCAP_A);
         }
         sleep_ms(100);
         cnt++;

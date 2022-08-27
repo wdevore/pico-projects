@@ -12,7 +12,10 @@ See parent [README.md](../README.md) for build directions
 - Using only Port A
 - Configured for Byte mode.
 
-Pins
+## Diagram
+![Kicard Diagram](mcp23s17_kicard_schemo.png)
+
+### Pins
 - GPA0 = input button
 - GPA1 = output LED
 - GPINT0 = 1

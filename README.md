@@ -31,7 +31,7 @@ $ ./pico_project.py --gui
 
 which will bring up a GUI interface allowing you to configure your project
 
-# Building
+# Building for Picoprobe
 
 - $ cd /media/iposthuman/Nihongo/Hardware/PicoRP2040/test/build/
 - (*first time on a change*) cmake ..
@@ -39,4 +39,9 @@ which will bring up a GUI interface allowing you to configure your project
 - $ sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program test.elf verify reset exit"
 
 # Terminal
-$ minicom -b 115200 -o -D /dev/ttyACM0
+
+## Picoprobe
+``` $ minicom -b 115200 -o -D /dev/ttyACM0 ```
+
+## Standalone
+``` $ minicom -b 115200 -o -D /dev/ttyUSB0 ```

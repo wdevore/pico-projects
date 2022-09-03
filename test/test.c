@@ -24,11 +24,11 @@ int main()
     {
         gpio_put(LED_PIN, 1);
         printf("Hello world ON (%d)\n", cnt);
-        sleep_ms(1000);
+        sleep_ms(100);
         gpio_put(LED_PIN, 0);
         printf("Hello world OFF (%d)\n", cnt);
         cnt++;
-        sleep_ms(50);
+        sleep_ms(1000);
     }
 #endif
 }

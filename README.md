@@ -6,12 +6,16 @@ Various RaspberryPi Pico projects
 
 ## Creating a new project and configuring.
 
+First time setup on first folder under root project.
+- If you haven't already, create a *build* directory under the root *pico-projects*.
+- Copy pico_sdk_import.cmake from pico-sdk/external into it
+
+Then
+
 - Create a new project folder under *pico-projects*.
 - cd into new folder.
-- Create *build* directory
 - Create CMakeLists.txt
-- Copy pico_sdk_import.cmake from pico-sdk/external
-- Create your *main.c* file and update CMakeLists.txt
+- Create your main *.c* file and update CMakeLists.txt
 - **important** In VSCode, right-click on *CMakeLists.txt* file and *Configure All Projects*. This will configure things such as intellisence and such.
 
 OR
@@ -38,10 +42,16 @@ which will bring up a GUI interface allowing you to configure your project
 - $ make -j4
 - $ sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program test.elf verify reset exit"
 
-# Terminal
+# Terminal (Minicom)
 
 ## Picoprobe
 ``` $ minicom -b 115200 -o -D /dev/ttyACM0 ```
 
 ## Standalone
 ``` $ minicom -b 115200 -o -D /dev/ttyUSB0 ```
+
+or using a configuration file from /etc/minicom
+
+``` $ minicom -b 115200 -o -D /dev/ttyUSB0 pico_io ```
+
+where *pico_io* is a minicom configuration file.

@@ -23,5 +23,7 @@ add_compile_options(-Wall
 )
 
 # Hardware-specific examples in subdirectories:
+add_subdirectory(io_uart)
+add_subdirectory(simulated_mcp23s17)
 add_subdirectory(mcp23s17_io_expander)
 add_subdirectory(test)

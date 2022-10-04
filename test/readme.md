@@ -1,4 +1,28 @@
+# Build
+```
+$ cd build/test
+$ make
+```
+
 # Upload
+
+## Via Picoprobe
+Upload via openocd
+```
+$ cd Nihongo/Hardware/PicoRP2040/pico-projects/build/test
+$ sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program test_project.elf verify reset exit"
+```
+
+## Via drag/drop UF2
+If using the reset/boot uf2 approach then just copy the *test_project.uf2* file to the mounted drive.
+
+```$ cp test_project.uf2 /media/<path to uf2>/RPI-RP2```
+
+
+# Pico baseboard
+**Does not work!!!**
+
+## Upload
 **Incorrect**
 ```
 $ cd Nihongo/Hardware/PicoRP2040/pico-projects/build/test
@@ -58,7 +82,6 @@ in procedure 'program'
 shutdown command invoked```
 
 
-# Pico baseboard
 The source code is at: https://github.com/wuxx/pico-lab
 
 ## Instructions for openocd 0.11.0

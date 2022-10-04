@@ -1,3 +1,9 @@
+# Build
+```
+$ cd build/mcp23s17_io_expander
+$ make
+```
+
 # Upload
 sudo openocd -f interface/picoprobe.cfg -f target/rp2040.cfg -c "program mcp23s17.elf verify reset exit"
 
